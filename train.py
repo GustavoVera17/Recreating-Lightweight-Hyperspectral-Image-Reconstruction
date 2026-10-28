@@ -260,8 +260,20 @@ def main():
             plt.close(fig)
             print(f"  [+] Dashboard exported: {dash_file}")
 
+        # Periodic Git Push to GitHub every 50 epochs or at the end
+        if epoch % 50 == 0 or epoch == args.epochs:
+            try:
+                import subprocess
+                subprocess.run(["git", "add", "results/"], cwd=BASE_DIR, check=False)
+                subprocess.run(["git", "commit", "-m", f"Auto-sync: Training metrics and dashboard at epoch {epoch}"], cwd=BASE_DIR, check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd=BASE_DIR, check=False)
+                print(f"  [-] Synced epoch {epoch} results to GitHub successfully.")
+            except Exception as e:
+                print(f"  [!] Git push notice: {e}")
+
     total_time = time.time() - total_start_time
     print(f"\n[+] Training Complete! Total time elapsed: {format_eta(total_time)}. Best PSNR: {best_psnr:.2f} dB.")
 
 if __name__ == '__main__':
     main()
+
