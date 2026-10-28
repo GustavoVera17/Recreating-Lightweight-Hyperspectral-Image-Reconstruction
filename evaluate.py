@@ -5,10 +5,10 @@ Compares quantitative metrics (PSNR, SSIM, SAM in radians) against Table 1 of Ya
 
 import os
 import sys
+import csv
 import argparse
 import numpy as np
 import torch
-from tabulate import tabulate
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
@@ -69,15 +69,28 @@ def evaluate(weights_path: str = None):
     mean_ssim = float(np.mean(ssim_list))
     mean_sam = float(np.mean(sam_list))
 
-    print("\n" + "=" * 75)
+    print("\n" + "=" * 80)
     print("                SUMMARY TABLE: REPLICATION VS PAPER (CAVE)")
-    print("=" * 75)
-    
-    summary_data = [
-        ["Paper Reported (Yamawaki 2023)", "27.44 dB", "0.8300", "0.3020 rad", "42 MB"],
-        ["Our Replication (Yamawaki_Rep_2)", f"{mean_psnr:.2f} dB", f"{mean_ssim:.4f}", f"{mean_sam:.4f} rad", "42.58 MB"]
-    ]
-    print(tabulate(summary_data, headers=["Method", "PSNR", "SSIM", "SAM (rad)", "Params (MB)"], tablefmt="fancy_grid"))
+    print("=" * 80)
+    header = f"{'Method':<35} | {'PSNR (dB)':<10} | {'SSIM':<8} | {'SAM (rad)':<10} | {'Params':<8}"
+    sep = "-" * len(header)
+    row_paper = f"{'Paper Reported (Yamawaki 2023)':<35} | {'27.44':<10} | {'0.8300':<8} | {'0.3020':<10} | {'42 MB':<8}"
+    row_rep   = f"{'Our Replication (Yamawaki_Rep_2)':<35} | {mean_psnr:<10.2f} | {mean_ssim:<8.4f} | {mean_sam:<10.4f} | {'42.58 MB':<8}"
+    print(header)
+    print(sep)
+    print(row_paper)
+    print(row_rep)
+    print("=" * 80)
+
+    # Save to CSV
+    csv_path = os.path.join(BASE_DIR, "results", "test_evaluation_20scenes.csv")
+    with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["scene_name", "psnr_db", "ssim", "sam_rad", "sam_deg"])
+        for row in results:
+            writer.writerow(row)
+        writer.writerow(["MEAN", f"{mean_psnr:.2f}", f"{mean_ssim:.4f}", f"{mean_sam:.4f}", ""])
+    print(f"\n[+] Detailed per-scene results saved to: {csv_path}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
